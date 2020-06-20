@@ -23,6 +23,8 @@ Mappings:
       AMI: ami-04e59c05167ea7bd5
     us-west-2:
       AMI: ami-0e34e7b9ca0ace12d
+    sa-east-1:
+      AMI: ami-0477a95397a9154b3
 
 Resources:
   # Create the VPCs
