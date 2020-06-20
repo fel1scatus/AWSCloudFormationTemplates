@@ -300,7 +300,7 @@ Resources:
         - RegionMap
         - !Ref AWS::Region
         - AMI
-      KeyName: MyEC2KP
+      KeyName: !Ref BastionKeyPairName
       Tags:
         - Key: Name
           Value: !Join [ '-', [!Sub '${AWS::StackName}', 'instance', '1', 'v1', 'B'] ]
@@ -319,7 +319,7 @@ Resources:
         - RegionMap
         - !Ref AWS::Region
         - AMI
-      KeyName: MyEC2KP
+      KeyName: !Ref BastionKeyPairName
       Tags:
         - Key: Name
           Value: !Join [ '-', [!Sub '${AWS::StackName}', 'instance', '1', 'v1', 'C'] ]
