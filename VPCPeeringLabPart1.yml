@@ -1,0 +1,328 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPC Peering LAB
+
+Parameters:
+  RemoteAccessCIDR:
+   AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
+   ConstraintDescription: CIDR x.x.x.x/x
+   Description: Allowed CIDR for SSH into the host with format x.x.x.x/x (Recommended, your public IP address)
+   Type: String 
+   
+  BastionKeyPairName:  
+   Description: Amazon EC2 Key Pair
+   Type: "AWS::EC2::KeyPair::KeyName"
+   ConstraintDescription: Select a valid KeyPair
+   
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-09d95fab7fff3776c
+    us-east-2:
+      AMI: ami-026dea5602e368e96
+    us-west-1:
+      AMI: ami-04e59c05167ea7bd5
+    us-west-2:
+      AMI: ami-0e34e7b9ca0ace12d
+
+Resources:
+  # Create the VPCs
+  SuperVPCA:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Peer-vpc-A'
+
+  SuperVPCB:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: '10.1.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Transit-vpc-B'
+
+  SuperVPCC:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: '10.2.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Peer-vpc-C'
+
+# Create each of the subnets
+
+  SubnetVPCA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: '10.0.0.0/24'
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-subnet-a'
+      VpcId: !Ref SuperVPCA
+
+  SubnetVPCB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: '10.1.0.0/24'
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-subnet-b'
+      VpcId: !Ref SuperVPCB
+
+  SubnetVPCC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: '10.2.0.0/24'
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-subnet-c'
+      VpcId: !Ref SuperVPCC
+
+#Create Internet gateways
+  VPCAInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-internet-gateway-A'  
+
+  VPCBInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-internet-gateway-B'  
+
+  VPCCInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-internet-gateway-C'  
+
+  # Attach IGWs
+  AttachIGWtoVPCA:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref VPCAInternetGateway
+      VpcId: !Ref SuperVPCA
+  
+  AttachIGWtoVPCB:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref VPCBInternetGateway
+      VpcId: !Ref SuperVPCB 
+
+  AttachIGWtoVPCC:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref VPCCInternetGateway
+      VpcId: !Ref SuperVPCC 
+
+  #Create Security Groups
+  SecGroupInstanceA:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for EC2 Instance on VPC A.
+      VpcId : !Ref SuperVPCA
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          CidrIp: !Ref RemoteAccessCIDR
+          FromPort: 22
+          ToPort: 22
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-SecGroupInstanceA'
+        - Key: Description
+          Value: !Sub 'Security Group created for for EC2 Instance on VPC A with ${AWS::StackName}.'
+  SecGroupInstanceAIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecGroupInstanceA
+      IpProtocol: icmp
+      FromPort: 8
+      ToPort: -1
+      CidrIp: 10.0.0.0/14
+      
+
+  SecGroupInstanceB:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for EC2 Instance on VPC B.
+      VpcId : !Ref SuperVPCB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          CidrIp: !Ref RemoteAccessCIDR
+          FromPort: 22
+          ToPort: 22
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-SecGroupInstanceB'
+        - Key: Description
+          Value: !Sub 'Security Group created for for EC2 Instance on VPC B with ${AWS::StackName}.'
+  SecGroupInstanceBIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecGroupInstanceB
+      IpProtocol: icmp
+      FromPort: 8
+      ToPort: -1
+      CidrIp: 10.0.0.0/14
+      
+
+  SecGroupInstanceC:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for EC2 Instance on VPC C.
+      VpcId : !Ref SuperVPCC
+      SecurityGroupIngress:
+       - IpProtocol: tcp
+         CidrIp: !Ref RemoteAccessCIDR
+         FromPort: 22
+         ToPort: 22
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-SecGroupInstanceC'
+        - Key: Description
+          Value: !Sub 'Security Group created for for EC2 Instance on VPC C with ${AWS::StackName}.'
+  SecGroupInstanceCIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecGroupInstanceC
+      IpProtocol: icmp
+      FromPort: 8
+      ToPort: -1
+      CidrIp: 10.0.0.0/14
+      
+
+  # Create all the routing tables
+  RouteTableVPCA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref SuperVPCA
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-rt-a'
+  RouteTableVPCB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref SuperVPCB
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-rt-b'
+  RouteTableVPCC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref SuperVPCC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-rt-c'
+
+  # Add IGW to route to our tables public traffic
+  AddIGWRoutingA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTableVPCA
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VPCAInternetGateway
+  AddIGWRoutingB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTableVPCB
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VPCBInternetGateway
+  AddIGWRoutingC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTableVPCC
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VPCCInternetGateway
+
+  # Make subnet association with route tables
+  AssociateSubnetARouteTableA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref RouteTableVPCA
+      SubnetId: !Ref SubnetVPCA
+  AssociateSubnetARouteTableB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref RouteTableVPCB
+      SubnetId: !Ref SubnetVPCB
+  AssociateSubnetARouteTableC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref RouteTableVPCC
+      SubnetId: !Ref SubnetVPCC
+
+  # Start creating Infrastructure
+  InstanceA:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - VPCAInternetGateway
+      - AttachIGWtoVPCA
+    Properties:
+      InstanceType: t2.micro
+      ImageId:
+        Fn::FindInMap:
+        - RegionMap
+        - !Ref AWS::Region
+        - AMI
+      KeyName: !Ref BastionKeyPairName
+      Tags:
+        - Key: Name
+          Value: !Join [ '-', [!Sub '${AWS::StackName}', 'instance', '1', 'v1', 'A'] ]
+      SecurityGroupIds:
+        - !Ref SecGroupInstanceA
+      SubnetId: !Join [ ',', [!Ref SubnetVPCA] ]
+  InstanceB:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - VPCBInternetGateway
+      - AttachIGWtoVPCB
+    Properties:
+      InstanceType: t2.micro
+      ImageId:
+        Fn::FindInMap:
+        - RegionMap
+        - !Ref AWS::Region
+        - AMI
+      KeyName: MyEC2KP
+      Tags:
+        - Key: Name
+          Value: !Join [ '-', [!Sub '${AWS::StackName}', 'instance', '1', 'v1', 'B'] ]
+      SecurityGroupIds:
+        - !Ref SecGroupInstanceB
+      SubnetId: !Join [ ',', [!Ref SubnetVPCB] ]
+  InstanceC:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - VPCCInternetGateway
+      - AttachIGWtoVPCC
+    Properties:
+      InstanceType: t2.micro
+      ImageId:
+        Fn::FindInMap:
+        - RegionMap
+        - !Ref AWS::Region
+        - AMI
+      KeyName: MyEC2KP
+      Tags:
+        - Key: Name
+          Value: !Join [ '-', [!Sub '${AWS::StackName}', 'instance', '1', 'v1', 'C'] ]
+      SecurityGroupIds:
+        - !Ref SecGroupInstanceC
+      SubnetId: !Join [ ',', [!Ref SubnetVPCC] ]
