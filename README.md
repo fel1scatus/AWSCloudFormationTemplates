@@ -12,3 +12,17 @@ https://docs.aws.amazon.com/cloudformation/index.html
 
 
 
+
+About "VPCPeeringLabPart1.yml"
+
+This Cloud Formation template is part 1 of a lab to test VPC Peering and Transitive Routing.
+It creates the following infrastructure in the AWS Cloud:
+
+In the US-East-1 region.
+3 VPCs with different /16 CIDR ranges.
+1 subnet per VPC using the first /24 network block from the VPC range with public addresses assignement enabled.
+1 Internet Gateway per VPC and attaches it to each VPC.
+1 Route table for each VPC. Which points to the IGW, and it is then associated one per subnet.
+3 Security Groups to allow access from the internet over SSH using a parameter specified IP address given at the time of the stack's creation, and rules allowing ICMP traffic against part of the neighbor VPCs.
+3 Linux t2.micro instances, one per VPC, with the mentioned security groups and a parameter specified KeyPair which is promped at the time of the stack's creation.
+
