@@ -302,21 +302,21 @@ Resources:
       VpcId: !Ref SuperVPCA
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-rt-a'
+          Value: RouteTableVPCA
   RouteTableVPCB:
     Type: AWS::EC2::RouteTable
     Properties: 
       VpcId: !Ref SuperVPCB
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-rt-b'
+          Value: RouteTableVPCB
   RouteTableVPCC:
     Type: AWS::EC2::RouteTable
     Properties: 
       VpcId: !Ref SuperVPCC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-rt-c'
+          Value: RouteTableVPCC
 
   # Add IGW to route to our tables public traffic
   AddIGWRoutingA:

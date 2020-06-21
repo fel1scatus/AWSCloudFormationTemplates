@@ -98,6 +98,9 @@ Resources:
     Properties:
       VpcId: !Ref VPCIdA
       PeerVpcId: !Ref VPCIdB
+      Tags:
+        - Key: Name
+          Value: vpcPeeringConnectionAwB
       # PeerOwnerId: !Ref PeerRequesterAccountId
       # PeerRoleArn: !Ref PeerRoleArn
       
@@ -106,6 +109,9 @@ Resources:
     Properties:
       VpcId: !Ref VPCIdB
       PeerVpcId: !Ref VPCIdC
+      Tags:
+        - Key: Name
+          Value: vpcPeeringConnectionBwC
       # PeerOwnerId: !Ref PeerRequesterAccountId
       # PeerRoleArn: !Ref PeerRoleArn
       
@@ -116,6 +122,13 @@ Resources:
       RouteTableId: !Ref RouteTableA
       VpcPeeringConnectionId: !Ref vpcPeeringConnectionAwB
       
+  PeeringRouteBwA:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: !Ref VPCCIDRRangeA
+      RouteTableId: !Ref RouteTableB
+      VpcPeeringConnectionId: !Ref vpcPeeringConnectionAwB    
+
   # SubnetRouteTableAssociationA:
     # Type: 'AWS::EC2::SubnetRouteTableAssociation'
     # Properties:
@@ -127,6 +140,13 @@ Resources:
     Properties:
       DestinationCidrBlock: !Ref VPCCIDRRangeC
       RouteTableId: !Ref RouteTableB
+      VpcPeeringConnectionId: !Ref vpcPeeringConnectionBwC
+      
+  PeeringRouteCwB:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: !Ref VPCCIDRRangeB
+      RouteTableId: !Ref RouteTableC
       VpcPeeringConnectionId: !Ref vpcPeeringConnectionBwC
       
   # SubnetRouteTableAssociationA:
