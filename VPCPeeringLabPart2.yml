@@ -3,49 +3,76 @@ Description: VPC Peering LAB Part 2 - Peering
 
 Parameters:
 
-  PeerRequesterAccountId:
+  VPCCIDRRangeA:
+   Description: The IP address range for VPC A.
    Type: String
-   Description: This can be obtained from the outputs from Part 1 of this LAB
+   MinLength: '9'
+   MaxLength: '18'
+   Default: 10.0.0.0/16
+   AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+   ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
    
-  PeerRoleArn:
+  VPCCIDRRangeB:
+   Description: The IP address range for VPC B.
    Type: String
-   Description: This can be obtained from the outputs from Part 1 of this LAB  
+   MinLength: '9'
+   MaxLength: '18'
+   Default: 10.1.0.0/16
+   AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+   ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+  
+  VPCCIDRRangeC:
+   Description: The IP address range for VPC C.
+   Type: String
+   MinLength: '9'
+   MaxLength: '18'
+   Default: 10.2.0.0/16
+   AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+   ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  # PeerRequesterAccountId:
+   # Type: String
+   # Description: This can be obtained from the outputs from Part 1 of this LAB
+   
+  # PeerRoleArn:
+   # Type: String
+   # Description: This can be obtained from the outputs from Part 1 of this LAB  
    
   VPCIdA:
-   Type: "AWS::EC2::VPC"
+   Type: AWS::EC2::VPC::Id
    Description: Select VPC A
    
   VPCIdB:
-   Type: "AWS::EC2::VPC"
+   Type: AWS::EC2::VPC::Id
    Description: Select VPC B
    
   VPCIdC:
-   Type: "AWS::EC2::VPC"
+   Type: AWS::EC2::VPC::Id
    Description: Select VPC C
    
   SubnetA:
-   Type: "AWS::EC2::Subnet"
+   Type: AWS::EC2::Subnet::Id
    Description: Select Subnet A
   
   SubnetB:
-   Type: "AWS::EC2::Subnet"
+   Type: AWS::EC2::Subnet::Id
    Description: Select Subnet B
   
-  SubnetA:
-   Type: "AWS::EC2::Subnet"
+  SubnetC:
+   Type: AWS::EC2::Subnet::Id
    Description: Select Subnet C
   
   RouteTableA:
-   Type: "AWS::EC2::RouteTable"
-   Description: Select Route Table for VPC A
+   Type: String
+   Description: Input RouteTableA Output from previous Stack
      
   RouteTableB:
-   Type: "AWS::EC2::RouteTable"
-   Description: Select Route Table for VPC B
+   Type: String
+   Description: Input RouteTableB Output from previous Stack
 
   RouteTableC:
-   Type: "AWS::EC2::RouteTable"
-   Description: Select Route Table for VPC C 
+   Type: String
+   Description: Input RouteTableB Output from previous Stack
    
   
    
@@ -71,42 +98,42 @@ Resources:
     Properties:
       VpcId: !Ref VPCIdA
       PeerVpcId: !Ref VPCIdB
-      PeerOwnerId: !Ref PeerRequesterAccountId
-      PeerRoleArn: !Ref PeerRoleArn
+      # PeerOwnerId: !Ref PeerRequesterAccountId
+      # PeerRoleArn: !Ref PeerRoleArn
       
   vpcPeeringConnectionBwC:
     Type: 'AWS::EC2::VPCPeeringConnection'
     Properties:
       VpcId: !Ref VPCIdB
       PeerVpcId: !Ref VPCIdC
-      PeerOwnerId: !Ref PeerRequesterAccountId
-      PeerRoleArn: !Ref PeerRoleArn
+      # PeerOwnerId: !Ref PeerRequesterAccountId
+      # PeerRoleArn: !Ref PeerRoleArn
       
   PeeringRouteAwB:
     Type: 'AWS::EC2::Route'
     Properties:
-      DestinationCidrBlock: !GetAtt VPCIdA.CidrBlock
+      DestinationCidrBlock: !Ref VPCCIDRRangeB
       RouteTableId: !Ref RouteTableA
       VpcPeeringConnectionId: !Ref vpcPeeringConnectionAwB
       
-  SubnetRouteTableAssociationA:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      SubnetId: !Ref SubnetA
-      RouteTableId: !Ref PeeringRouteAwB
+  # SubnetRouteTableAssociationA:
+    # Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    # Properties:
+      # SubnetId: !Ref SubnetA
+      # RouteTableId: !Ref PeeringRouteAwB
 
   PeeringRouteBwC:
     Type: 'AWS::EC2::Route'
     Properties:
-      DestinationCidrBlock: !GetAtt VPCIdC.CidrBlock
+      DestinationCidrBlock: !Ref VPCCIDRRangeC
       RouteTableId: !Ref RouteTableB
       VpcPeeringConnectionId: !Ref vpcPeeringConnectionBwC
       
-  SubnetRouteTableAssociationA:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      SubnetId: !Ref SubnetB
-      RouteTableId: !Ref PeeringRouteBwC      
+  # SubnetRouteTableAssociationA:
+    # Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    # Properties:
+      # SubnetId: !Ref SubnetB
+      # RouteTableId: !Ref PeeringRouteBwC      
       
       
 Outputs:

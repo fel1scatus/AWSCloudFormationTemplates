@@ -2,8 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: VPC Peering LAB Part 1 - VPCs and Instances
 
 Parameters:
-  PeerRequesterAccountId:
-    Type: String
     
   VPCCIDRRangeA:
    Description: The IP address range for VPC A.
@@ -119,25 +117,25 @@ Resources:
           Value: !Sub '${AWS::StackName}-Peer-vpc-C'
 
 #Create Role for Peering on Part 2
-  peerRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Principal:
-              AWS: !Ref PeerRequesterAccountId
-            Action:
-              - 'sts:AssumeRole'
-            Effect: Allow
-      Path: /
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: 'ec2:AcceptVpcPeeringConnection'
-                Resource: '*'
+  # peerRole:
+    # Type: 'AWS::IAM::Role'
+    # Properties:
+      # AssumeRolePolicyDocument:
+        # Statement:
+          # - Principal:
+              # AWS: !Ref PeerRequesterAccountId
+            # Action:
+              # - 'sts:AssumeRole'
+            # Effect: Allow
+      # Path: /
+      # Policies:
+        # - PolicyName: root
+          # PolicyDocument:
+            # Version: 2012-10-17
+            # Statement:
+              # - Effect: Allow
+                # Action: 'ec2:AcceptVpcPeeringConnection'
+                # Resource: '*'
 
 # Create each of the subnets
 
@@ -442,9 +440,9 @@ Outputs:
   CIDRRangeC:
     Value: !Ref VPCCIDRRangeC
     
-  PeerAccountID:
-    Value: !Ref PeerRequesterAccountId
-  RoleARN:
-    Value: !GetAtt 
-      - peerRole
-      - Arn
+  # PeerAccountID:
+    # Value: !Ref "AWS::AccountId"
+  # RoleARN:
+    # Value: !GetAtt 
+      # - peerRole
+      # - Arn
