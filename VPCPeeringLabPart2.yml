@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPC Peering LAB Part 2 - Peering
+
+Parameters:
+
+  PeerRequesterAccountId:
+   Type: String
+   Description: This can be obtained from the outputs from Part 1 of this LAB
+   
+  PeerRoleArn:
+   Type: String
+   Description: This can be obtained from the outputs from Part 1 of this LAB  
+   
+  VPCIdA:
+   Type: "AWS::EC2::VPC"
+   Description: Select VPC A
+   
+  VPCIdB:
+   Type: "AWS::EC2::VPC"
+   Description: Select VPC B
+   
+  VPCIdC:
+   Type: "AWS::EC2::VPC"
+   Description: Select VPC C
+   
+  SubnetA:
+   Type: "AWS::EC2::Subnet"
+   Description: Select Subnet A
+  
+  SubnetB:
+   Type: "AWS::EC2::Subnet"
+   Description: Select Subnet B
+  
+  SubnetA:
+   Type: "AWS::EC2::Subnet"
+   Description: Select Subnet C
+  
+  RouteTableA:
+   Type: "AWS::EC2::RouteTable"
+   Description: Select Route Table for VPC A
+     
+  RouteTableB:
+   Type: "AWS::EC2::RouteTable"
+   Description: Select Route Table for VPC B
+
+  RouteTableC:
+   Type: "AWS::EC2::RouteTable"
+   Description: Select Route Table for VPC C 
+   
+  
+   
+
+   
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-09d95fab7fff3776c
+    us-east-2:
+      AMI: ami-026dea5602e368e96
+    us-west-1:
+      AMI: ami-04e59c05167ea7bd5
+    us-west-2:
+      AMI: ami-0e34e7b9ca0ace12d
+    sa-east-1:
+      AMI: ami-0477a95397a9154b3
+      
+      
+Resources:
+  vpcPeeringConnectionAwB:
+    Type: 'AWS::EC2::VPCPeeringConnection'
+    Properties:
+      VpcId: !Ref VPCIdA
+      PeerVpcId: !Ref VPCIdB
+      PeerOwnerId: !Ref PeerRequesterAccountId
+      PeerRoleArn: !Ref PeerRoleArn
+      
+  vpcPeeringConnectionBwC:
+    Type: 'AWS::EC2::VPCPeeringConnection'
+    Properties:
+      VpcId: !Ref VPCIdB
+      PeerVpcId: !Ref VPCIdC
+      PeerOwnerId: !Ref PeerRequesterAccountId
+      PeerRoleArn: !Ref PeerRoleArn
+      
+  PeeringRouteAwB:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: !GetAtt VPCIdA.CidrBlock
+      RouteTableId: !Ref RouteTableA
+      VpcPeeringConnectionId: !Ref vpcPeeringConnectionAwB
+      
+  SubnetRouteTableAssociationA:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetA
+      RouteTableId: !Ref PeeringRouteAwB
+
+  PeeringRouteBwC:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: !GetAtt VPCIdC.CidrBlock
+      RouteTableId: !Ref RouteTableB
+      VpcPeeringConnectionId: !Ref vpcPeeringConnectionBwC
+      
+  SubnetRouteTableAssociationA:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetB
+      RouteTableId: !Ref PeeringRouteBwC      
+      
+      
+Outputs:
+
+  VPCPeeringConnectionIdAwB:
+    Value: !Ref vpcPeeringConnectionAwB    
+    
+  VPCPeeringConnectionIdBwC:
+    Value: !Ref vpcPeeringConnectionBwC     
+      
